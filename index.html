@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTT 4.0 — Dashboard Production</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --orange: #FB5D04; --orange-dk: #d94d00; --orange-glow: rgba(251,93,4,0.18);
+  --blue: #04A9DA; --blue-dk: #0388b0; --blue-glow: rgba(4,169,218,0.14);
+  --green: #10B981; --green-lt: rgba(16,185,129,0.12);
+  --red: #EF4444; --red-lt: rgba(239,68,68,0.12);
+  --purple: #8B5CF6; --purple-lt: rgba(139,92,246,0.12);
+  --yellow: #F59E0B; --yellow-lt: rgba(245,158,11,0.12);
+  --dark: #080C16; --dark2: #0D1321; --surface: #111827; --card: #161F30;
+  --card2: #1C2840; --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.12);
+  --text: #E8EDF5; --muted: #6B7A99; --muted2: #8899BB;
+  --sidebar-w: 240px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--dark);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* BG grid */
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(rgba(4,169,218,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(4,169,218,0.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none;z-index:0}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100vh;position:relative;z-index:1}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar-w);background:var(--dark2);border-right:1px solid var(--border);
+  position:fixed;top:0;left:0;bottom:0;z-index:100;display:flex;flex-direction:column;
+  transition:transform .3s}
+.sidebar-hd{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo-sq{width:32px;height:32px;background:linear-gradient(135deg,var(--orange),#ff8040);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;
+  font-weight:800;font-size:14px;color:white;box-shadow:0 0 16px var(--orange-glow);flex-shrink:0}
+.sidebar-title{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;color:var(--text)}
+.sidebar-title span{color:var(--orange)}
+.sidebar-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;letter-spacing:.05em}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-group{margin-bottom:4px}
+.nav-group-label{font-family:'DM Mono',monospace;font-size:9px;font-weight:500;text-transform:uppercase;
+  letter-spacing:.12em;color:var(--muted);padding:10px 16px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;margin:1px 8px;border-radius:8px;
+  cursor:pointer;font-size:13px;font-weight:500;color:var(--muted2);transition:all .18s;text-decoration:none;border:none;background:none;width:calc(100% - 16px)}
+.nav-item:hover{background:rgba(255,255,255,0.05);color:var(--text)}
+.nav-item.active{background:rgba(251,93,4,0.15);color:var(--orange);border:1px solid rgba(251,93,4,0.25)}
+.nav-item.active-blue{background:rgba(4,169,218,0.12);color:var(--blue);border:1px solid rgba(4,169,218,0.2)}
+.nav-ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--orange);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px}
+.sidebar-ft{padding:12px 16px;border-top:1px solid var(--border)}
+.ver-badge{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.ver-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar-w);flex:1;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(8,12,22,0.85);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);padding:12px 28px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:var(--text)}
+.topbar-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border2);
+  border-radius:8px;padding:7px 12px;width:240px;transition:all .2s}
+.topbar-search:focus-within{border-color:var(--orange);box-shadow:0 0 0 3px var(--orange-glow)}
+.topbar-search input{border:none;outline:none;background:none;font-family:'DM Sans',sans-serif;
+  font-size:12px;flex:1;color:var(--text)}
+.topbar-search input::placeholder{color:var(--muted)}
+.content{padding:24px 28px;max-width:1240px}
+.panel{display:none}
+.panel.active{display:block;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.card-t{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;color:var(--text)}
+.card-t span{color:var(--orange)}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}.grid-5{grid-template-columns:repeat(3,1fr)}}
+
+/* ── STAT CARDS ── */
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center}
+.stat-v{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:var(--orange)}
+.stat-l{font-size:12px;color:var(--muted);margin-top:4px}
+
+/* ── TABLES ── */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:9px 12px;text-align:left;font-family:'DM Mono',monospace;font-size:10px;font-weight:500;
+  text-transform:uppercase;letter-spacing:.08em;color:var(--muted);background:var(--surface);border-bottom:1px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* ── PIPELINE ── */
+.pipeline{display:flex;flex-direction:column;gap:4px}
+.pipe-step{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.pipe-step:hover{border-color:var(--border2);background:rgba(255,255,255,0.03)}
+.pipe-step.open{border-color:var(--orange);background:var(--orange-glow)}
+.pipe-num{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.pipe-label{font-weight:600;font-size:13px;flex:1}
+.pipe-time{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.pipe-detail{display:none;padding:10px 14px 10px 48px;font-size:12px;color:var(--muted2);line-height:1.6;border-left:2px solid var(--border);margin:0 14px 4px}
+.pipe-detail.open{display:block}
+
+/* ── FORMAT CARDS ── */
+.format-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:900px){.format-grid{grid-template-columns:1fr 1fr}}
+.fmt-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.fmt-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange)}
+.fmt-card.blue::before{background:var(--blue)}
+.fmt-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.fmt-card.active{border-color:var(--orange);background:rgba(251,93,4,0.06)}
+.fmt-letter{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--orange)}
+.fmt-card.blue .fmt-letter{color:var(--blue)}
+.fmt-name{font-size:12px;font-weight:600;margin-top:2px}
+.fmt-dur{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px}
+.fmt-detail{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px;display:none}
+.fmt-detail.active{display:block;animation:fadeIn .2s ease}
+.timeline-bar{display:flex;gap:3px;margin:12px 0;flex-wrap:wrap}
+.tl-seg{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;color:#fff;flex:1;min-width:60px;text-align:center}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px}
+.checklist li:last-child{border-bottom:none}
+.cb{width:18px;height:18px;border:2px solid var(--border2);border-radius:5px;flex-shrink:0;cursor:pointer;transition:all .2s;margin-top:1px}
+.cb.checked{background:var(--green);border-color:var(--green)}
+
+/* ── COMP GRID ── */
+.comp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+@media(max-width:900px){.comp-grid{grid-template-columns:1fr 1fr}}
+.comp-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.comp-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.comp-card.selected{border-color:var(--blue);background:rgba(4,169,218,0.06)}
+.comp-code{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;margin-bottom:4px}
+.comp-name{font-size:13px;font-weight:600;margin-bottom:4px}
+.comp-pack{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.comp-pillar{font-size:10px;font-weight:600;padding:3px 8px;border-radius:10px;display:inline-block;margin-top:6px}
+.comp-detail{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;display:none}
+.comp-detail.active{display:block;animation:fadeIn .2s ease}
+.idea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.idea.orange{border-left:3px solid var(--orange)}
+.idea.blue{border-left:3px solid var(--blue)}
+.idea.green{border-left:3px solid var(--green)}
+.idea.purple{border-left:3px solid var(--purple)}
+.idea-title{font-size:13px;font-weight:600;margin-bottom:6px}
+.idea-hook{font-size:11px;color:var(--muted2);font-style:italic;margin-top:4px}
+
+/* ── SPECS TABLE ── */
+.spec-table th{background:var(--dark2)}
+.val-orange{color:var(--orange);font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.val-blue{color:var(--blue);font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.val-w{color:var(--text);font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.param-note{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5}
+
+/* ── PATH STEPS ── */
+.path-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin:12px 0}
+.path-title{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.1em;color:var(--orange);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.path-steps{display:flex;align-items:center;gap:0;flex-wrap:wrap;gap:4px}
+.path-step{padding:5px 12px;background:var(--card);border:1px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text);white-space:nowrap}
+.path-arrow{color:var(--muted);font-size:12px;padding:0 2px}
+
+/* ── TAGS ── */
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(255,255,255,0.07);color:var(--muted2)}
+.tag-orange{background:rgba(251,93,4,0.15);color:var(--orange)}
+.tag-blue{background:rgba(4,169,218,0.15);color:var(--blue)}
+.tag-green{background:rgba(16,185,129,0.15);color:var(--green)}
+.tag-purple{background:rgba(139,92,246,0.15);color:var(--purple)}
+.tag-red{background:rgba(239,68,68,0.15);color:var(--red)}
+
+/* ── PLATFORM TABS ── */
+.ptabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.ptab{padding:8px 18px;border-radius:8px;font-family:'Syne',sans-serif;font-size:12px;font-weight:700;
+  cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--muted);transition:all .2s}
+.ptab:hover{color:var(--text);border-color:var(--border2)}
+.ptab.active{background:var(--orange);border-color:var(--orange);color:#fff;box-shadow:0 0 16px rgba(251,93,4,0.3)}
+.ptab.active-b{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 16px rgba(4,169,218,0.3)}
+.pplatform{display:none}
+.pplatform.active{display:block;animation:fadeIn .2s ease}
+
+/* ── COLOR SWATCHES ── */
+.color-sw{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.color-sw:last-child{border-bottom:none}
+.sw{width:36px;height:36px;border-radius:8px;flex-shrink:0}
+
+/* ── EQUIPE ── */
+.team-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.team-av{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0;margin-bottom:10px}
+.team-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700}
+.team-role{font-size:12px;color:var(--muted);margin-top:2px}
+.team-contact{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);margin-top:8px}
+
+/* ── FILTER BTNS ── */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.filter-btn{padding:5px 14px;border-radius:16px;font-size:12px;font-weight:600;cursor:pointer;
+  border:1px solid var(--border);background:transparent;color:var(--muted);transition:all .2s}
+.filter-btn:hover,.filter-btn.active{background:var(--card2);color:var(--text);border-color:var(--border2)}
+
+/* ── MOBILE TOGGLE ── */
+.mob-toggle{display:none;padding:8px;border:1px solid var(--border);border-radius:8px;background:var(--card);cursor:pointer;color:var(--text);font-size:18px;line-height:1}
+@media(max-width:768px){
+  .mob-toggle{display:flex}
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .scrim{display:block!important}
+}
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99}
+
+/* ── QUICK REF ── */
+.qref-row{display:flex;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.qref-row:last-child{border-bottom:none}
+.ratio-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-family:'DM Mono',monospace;font-size:10px;font-weight:600}
+.ratio-v{background:rgba(251,93,4,0.15);color:var(--orange)}
+.ratio-h{background:rgba(4,169,218,0.15);color:var(--blue)}
+
+/* ── GOLPO SECTION ── */
+.golpo-warning{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.golpo-ok{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+.golpo-pending{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:14px 16px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-hd">
+    <div class="logo-row">
+      <div class="logo-sq">M</div>
+      <div>
+        <div class="sidebar-title">Move to <span>Top</span></div>
+        <div class="sidebar-sub">Production Dashboard 4.0</div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group">
+      <div class="nav-group-label">Vue globale</div>
+      <button class="nav-item active" data-panel="dashboard" onclick="nav('dashboard',this)"><span class="nav-ic">⚡</span>Vue d'ensemble</button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Production</div>
+      <button class="nav-item" data-panel="formats" onclick="nav('formats',this)"><span class="nav-ic">🎬</span>Formats A–E</button>
+      <button class="nav-item" data-panel="pipeline" onclick="nav('pipeline',this)"><span class="nav-ic">🔄</span>Pipeline Montage</button>
+      <button class="nav-item" data-panel="checklist" onclick="nav('checklist',this)"><span class="nav-ic">✅</span>Checklists</button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Technique</div>
+      <button class="nav-item" data-panel="specs" onclick="nav('specs',this)"><span class="nav-ic">⚙️</span>Specs Export<span class="nav-badge">DV20</span></button>
+      <button class="nav-item" data-panel="branding" onclick="nav('branding',this)"><span class="nav-ic">🎨</span>Branding & Design</button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Contenu</div>
+      <button class="nav-item" data-panel="competences" onclick="nav('competences',this)"><span class="nav-ic">🎯</span>12 Compétences</button>
+      <button class="nav-item" data-panel="learnworlds" onclick="nav('learnworlds',this)"><span class="nav-ic">🎓</span>LearnWorlds & Golpo</button>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">Organisation</div>
+      <button class="nav-item" data-panel="clickup" onclick="nav('clickup',this)"><span class="nav-ic">📊</span>Structure ClickUp</button>
+      <button class="nav-item" data-panel="equipe" onclick="nav('equipe',this)"><span class="nav-ic">👥</span>Équipe & Contacts</button>
+      <button class="nav-item" data-panel="plan" onclick="nav('plan',this)"><span class="nav-ic">📋</span>Plan d'Action</button>
+    </div>
+  </div>
+  <div class="sidebar-ft">
+    <div class="ver-badge"><div class="ver-dot"></div>DaVinci Resolve 20 · Mars 2026</div>
+  </div>
+</nav>
+
+<!-- SCRIM -->
+<div class="scrim" id="scrim" onclick="closeSidebar()"></div>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="mob-toggle" onclick="document.getElementById('sidebar').classList.toggle('open');document.getElementById('scrim').style.display='block'">☰</button>
+      <div class="topbar-title" id="topbar-title">Vue d'ensemble</div>
+    </div>
+    <div class="topbar-search">
+      <span style="color:var(--muted);font-size:13px">🔍</span>
+      <input type="text" placeholder="Rechercher..." id="search-input" oninput="searchDash(this.value)">
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ══════════════════════════════════════
+         DASHBOARD
+    ══════════════════════════════════════ -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="grid-5">
+        <div class="stat-card"><div class="stat-v">5</div><div class="stat-l">Formats vidéo</div></div>
+        <div class="stat-card"><div class="stat-v">8</div><div class="stat-l">Statuts pipeline</div></div>
+        <div class="stat-card"><div class="stat-v">12</div><div class="stat-l">Compétences</div></div>
+        <div class="stat-card"><div class="stat-v">60</div><div class="stat-l">Idées vidéo</div></div>
+        <div class="stat-card"><div class="stat-v">4</div><div class="stat-l">Plateformes export</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-t">🎬 Formats — Vue rapide</div>
+          <table>
+            <tr><th>Format</th><th>Type</th><th>Durée</th><th>Montage</th></tr>
+            <tr><td><b style="color:var(--orange)">A</b> Conseil Rapide</td><td>9:16</td><td>30–60s</td><td>~2h</td></tr>
+            <tr><td><b style="color:var(--orange)">B</b> Question Parent</td><td>9:16</td><td>60–90s</td><td>~2.5h</td></tr>
+            <tr><td><b style="color:var(--orange)">C</b> Témoignage</td><td>9:16/16:9</td><td>60–120s</td><td>~3h</td></tr>
+            <tr><td><b style="color:var(--blue)">D</b> Tutoriel Long</td><td>16:9</td><td>10–20min</td><td>8–12h</td></tr>
+            <tr><td><b style="color:var(--muted2)">E</b> BTS</td><td>9:16</td><td>15–45s</td><td>~30min</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-t">🔄 Pipeline — 8 statuts</div>
+          <div class="pipeline">
+            <div class="pipe-step" style="background:rgba(99,102,241,0.12);border-color:rgba(99,102,241,0.2)">
+              <div class="pipe-num" style="background:#6366F1">1</div><span class="pipe-label">À dérusher</span><span class="pipe-time">24h</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.2)">
+              <div class="pipe-num" style="background:#8B5CF6">2</div><span class="pipe-label">En analyse</span><span class="pipe-time">24h</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(4,169,218,0.12);border-color:rgba(4,169,218,0.2)">
+              <div class="pipe-num" style="background:var(--blue)">3</div><span class="pipe-label">Montage</span><span class="pipe-time">48–72h</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(14,165,233,0.12);border-color:rgba(14,165,233,0.2)">
+              <div class="pipe-num" style="background:#0EA5E9">4</div><span class="pipe-label">Audio/Visuel</span><span class="pipe-time">24h</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(251,93,4,0.12);border-color:rgba(251,93,4,0.2)">
+              <div class="pipe-num" style="background:var(--orange)">5</div><span class="pipe-label">En révision</span><span class="pipe-time">24h (Joël)</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.2)">
+              <div class="pipe-num" style="background:#F59E0B">6</div><span class="pipe-label">Corrections</span><span class="pipe-time">24h · 2 rounds max</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.2)">
+              <div class="pipe-num" style="background:var(--green)">7</div><span class="pipe-label">Prêt publication</span><span class="pipe-time">—</span>
+            </div>
+            <div class="pipe-step" style="background:rgba(5,150,105,0.2);border-color:rgba(5,150,105,0.3)">
+              <div class="pipe-num" style="background:#059669">8</div><span class="pipe-label">Publié ✓</span><span class="pipe-time">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">🎨 Couleurs MTT — Référence rapide DaVinci</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+            <div style="width:32px;height:32px;border-radius:6px;background:#2563EB"></div>
+            <div><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700">#2563EB</div><div style="font-size:11px;color:var(--muted)">Bleu MTT — Titres, CTA, overlays</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+            <div style="width:32px;height:32px;border-radius:6px;background:#F97316"></div>
+            <div><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700">#F97316</div><div style="font-size:11px;color:var(--muted)">Orange MTT — Accents, badges</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+            <div style="width:32px;height:32px;border-radius:6px;background:#16A34A"></div>
+            <div><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700">#16A34A</div><div style="font-size:11px;color:var(--muted)">Vert MTT — Succès, progression</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">
+            <div style="width:32px;height:32px;border-radius:6px;background:linear-gradient(135deg,#FB5D04,#04A9DA)"></div>
+            <div><div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700">#FB5D04 / #04A9DA</div><div style="font-size:11px;color:var(--muted)">Couleurs dashboard — Outils prod</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         FORMATS
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-formats">
+      <div class="format-grid" id="fmt-grid">
+        <div class="fmt-card" onclick="showFmt('A',this)"><div class="fmt-letter">A</div><div class="fmt-name">Conseil Rapide</div><div class="fmt-dur">30–60s · 9:16</div></div>
+        <div class="fmt-card" onclick="showFmt('B',this)"><div class="fmt-letter">B</div><div class="fmt-name">Question Parent</div><div class="fmt-dur">60–90s · 9:16</div></div>
+        <div class="fmt-card" onclick="showFmt('C',this)"><div class="fmt-letter">C</div><div class="fmt-name">Témoignage</div><div class="fmt-dur">60–120s · 9:16/16:9</div></div>
+        <div class="fmt-card blue" onclick="showFmt('D',this)"><div class="fmt-letter">D</div><div class="fmt-name">Tutoriel Long</div><div class="fmt-dur">10–20min · 16:9</div></div>
+        <div class="fmt-card" onclick="showFmt('E',this)" style="opacity:.8"><div class="fmt-letter" style="color:var(--muted2)">E</div><div class="fmt-name">Behind The Scenes</div><div class="fmt-dur">15–45s · 9:16</div></div>
+      </div>
+      <div class="fmt-detail" id="fmt-detail"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PIPELINE
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-pipeline">
+      <div class="card" style="margin-bottom:16px;background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2)">
+        <div style="font-size:13px;line-height:1.6"><span style="color:var(--red);font-weight:700">⚠ Règle non négociable : </span>Pas de montage sans brief complet dans ClickUp. Si le brief est absent → statut reste « En attente brief » → passe à la vidéo suivante.</div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-t">🔄 Pipeline détaillé</div>
+          <div id="pipeline-full"></div>
+        </div>
+        <div class="card">
+          <div class="card-t">📅 Délais — Phase de rodage</div>
+          <table>
+            <tr><th>Statut</th><th>Rodage</th><th>Cible</th></tr>
+            <tr><td>À dérusher</td><td>48h</td><td>24h</td></tr>
+            <tr><td>En analyse</td><td>24h</td><td>24h</td></tr>
+            <tr><td>Montage courts</td><td>72h</td><td>48h</td></tr>
+            <tr><td>Montage longs</td><td>1 semaine</td><td>5 jours</td></tr>
+            <tr><td>Audio/Visuel</td><td>48h</td><td>24h</td></tr>
+            <tr><td>Révision Joël</td><td>24h</td><td>24h</td></tr>
+            <tr><td>Feu vert Gervais</td><td>48h</td><td>48h</td></tr>
+            <tr><td>Corrections</td><td>48h</td><td>24h</td></tr>
+          </table>
+          <div style="margin-top:14px;padding:12px;background:var(--surface);border-radius:8px;font-size:12px;line-height:1.6">
+            <b>Format feedback :</b><br>
+            <span style="font-family:'DM Mono',monospace;color:var(--blue);font-size:11px">[0:23–0:28] : hook trop long → réduire à 3 secondes</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">📊 Fréquence de production — Semaines 1–4</div>
+        <table>
+          <tr><th>Semaine</th><th>Vidéos courtes</th><th>Vidéos longues</th><th>Focus</th></tr>
+          <tr><td>Semaine 1</td><td>2–3</td><td>0</td><td>Mise en place process + rushs anciens</td></tr>
+          <tr><td>Semaine 2</td><td>3</td><td>0</td><td>Rodage pipeline ClickUp</td></tr>
+          <tr><td>Semaine 3</td><td>3–4</td><td>0–1</td><td>Accélération rythme</td></tr>
+          <tr><td>Semaine 4</td><td>4–5</td><td>1</td><td>Rythme de croisière initial</td></tr>
+        </table>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted)">Cible DOC-044 (5–7 courts/semaine) atteignable à M+2. Priorité #1 : vidéos LearnWorlds via Golpo.</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         CHECKLIST
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-checklist">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-t">✅ Qualité — Avant livraison</div>
+          <ul class="checklist" id="cl-quality"></ul>
+        </div>
+        <div class="card">
+          <div class="card-t">📤 Publication</div>
+          <ul class="checklist" id="cl-pub"></ul>
+          <div style="margin-top:14px;padding:12px;background:var(--surface);border-radius:8px;font-size:12px">
+            <b>Horaires optimaux (EST) :</b><br>
+            <span style="color:var(--orange)">YouTube</span> 12h, 17h · <span style="color:var(--muted2)">TikTok</span> 19h–21h · <span style="color:var(--purple)">Instagram</span> 11h, 19h · <span style="color:var(--blue)">Facebook</span> 9h, 13h, 19h
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         SPECS EXPORT
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-specs">
+      <div class="ptabs">
+        <button class="ptab active" onclick="showPlat('yt-shorts',this)">▶ YouTube Shorts</button>
+        <button class="ptab" onclick="showPlat('yt-long',this)">▶ YouTube Long</button>
+        <button class="ptab" onclick="showPlat('tiktok',this)">♪ TikTok</button>
+        <button class="ptab" onclick="showPlat('facebook',this)">f Facebook Reels</button>
+      </div>
+
+      <!-- YT SHORTS -->
+      <div class="pplatform active" id="plat-yt-shorts">
+        <div class="card">
+          <div class="card-t">▶ YouTube Shorts <span style="font-size:12px;color:var(--muted);font-weight:400">— Formats A · B · E</span></div>
+          <table class="spec-table">
+            <tr><th>Paramètre</th><th>Valeur</th><th>DaVinci Resolve 20 (FR)</th></tr>
+            <tr><td>Résolution</td><td><span class="val-orange">1080 × 1920</span> Full HD<br><div class="param-note">4K : <span class="val-blue">2160 × 3840</span> si source filmée 4K</div></td><td><div class="param-note">Résolution : Timeline Resolution · 9:16</div></td></tr>
+            <tr><td>Codec vidéo</td><td><span class="val-w">H.264</span><br><div class="param-note">H.265 acceptable si source 4K</div></td><td><div class="param-note">Format : QuickTime · Codec : H.264</div></td></tr>
+            <tr><td>Bitrate</td><td><span class="val-orange">12 000 Kb/s</span> Full HD<br><div class="param-note">4K : <span class="val-blue">35 000–50 000 Kb/s</span></div></td><td><div class="param-note">Rate Control : Débit binaire variable · Bit Rate : 12000 Kb/s</div></td></tr>
+            <tr><td>Fréquence d'images</td><td><span class="val-w">30 fps</span><br><div class="param-note">60 fps si source le permet</div></td><td><div class="param-note">Fréquence d'images de la timeline</div></td></tr>
+            <tr><td>Audio</td><td><span class="val-w">AAC · 48 kHz · Stéréo · 320 Kb/s</span></td><td><div class="param-note">Onglet Audio → AAC · Débit binaire constant · 320 Kb/s · Bus 1 Stéréo</div></td></tr>
+            <tr><td>Durée max</td><td><span class="val-w">60 secondes</span><br><div class="param-note">Optimal MTT : 30–55s</div></td><td></td></tr>
+            <tr><td>Zone safe</td><td><span class="val-orange">80% centraux</span><br><div class="param-note">Éviter 120px haut · 220px bas</div></td><td><div class="param-note">Safe Area overlay → Custom safe zones</div></td></tr>
+          </table>
+          <div class="path-box">
+            <div class="path-title">⚙ Chemin DaVinci 20</div>
+            <div class="path-steps">
+              <div class="path-step">Livrer</div><div class="path-arrow">→</div>
+              <div class="path-step">QuickTime · H.264</div><div class="path-arrow">→</div>
+              <div class="path-step">Débit binaire variable</div><div class="path-arrow">→</div>
+              <div class="path-step">12 000 Kb/s</div><div class="path-arrow">→</div>
+              <div class="path-step">Preset : Équilibrer</div><div class="path-arrow">→</div>
+              <div class="path-step">AAC · 320 Kb/s · Bus 1 Stéréo</div><div class="path-arrow">→</div>
+              <div class="path-step">Ajouter à la file de rendu</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- YT LONG -->
+      <div class="pplatform" id="plat-yt-long">
+        <div class="card">
+          <div class="card-t">▶ YouTube Long Format <span style="font-size:12px;color:var(--muted);font-weight:400">— Formats D · C</span></div>
+          <table class="spec-table">
+            <tr><th>Paramètre</th><th>Valeur</th><th>DaVinci Resolve 20 (FR)</th></tr>
+            <tr><td>Résolution</td><td><span class="val-blue">1920 × 1080</span> Full HD<br><div class="param-note">4K : <span class="val-orange">3840 × 2160</span> recommandé pour le SEO YouTube</div></td><td><div class="param-note">Résolution : Timeline Resolution · 16:9</div></td></tr>
+            <tr><td>Codec vidéo</td><td><span class="val-w">H.264</span> pour 1080p<br><div class="param-note"><span class="val-blue">H.265</span> recommandé pour 4K</div></td><td><div class="param-note">Préréglage H.264 Master (1080p) ou H.265 Master (4K)</div></td></tr>
+            <tr><td>Bitrate</td><td><span class="val-blue">20 000 Kb/s</span> Full HD<br><div class="param-note">4K : <span class="val-orange">51 000 Kb/s</span> (recommandation YouTube)</div></td><td><div class="param-note">Rate Control : Débit binaire variable · Bit Rate selon résolution</div></td></tr>
+            <tr><td>Audio</td><td><span class="val-w">AAC · 48 kHz · Stéréo · 320 Kb/s</span></td><td><div class="param-note">Onglet Audio → AAC · 320 Kb/s · Bus 1 Stéréo</div></td></tr>
+            <tr><td>Chapitres</td><td><span class="val-orange">OBLIGATOIRES</span> Format D<br><div class="param-note">Min 3 chapitres · Premier à 0:00</div></td><td><div class="param-note">Poser marqueurs timeline → cocher "Chapitres à partir des marqueurs"</div></td></tr>
+            <tr><td>Thumbnail</td><td><span class="val-blue">1280 × 720 px</span> · JPG/PNG · &lt;2Mo<br><div class="param-note">Visage Gervais + texte &gt;50px + couleur accent</div></td><td><div class="param-note">Export Still depuis le Viewer → frame impactante</div></td></tr>
+          </table>
+          <div class="path-box">
+            <div class="path-title">⚙ Chemin DaVinci 20</div>
+            <div class="path-steps">
+              <div class="path-step">Livrer</div><div class="path-arrow">→</div>
+              <div class="path-step">H.264 Master</div><div class="path-arrow">→</div>
+              <div class="path-step">Débit binaire variable</div><div class="path-arrow">→</div>
+              <div class="path-step">20 000–51 000 Kb/s</div><div class="path-arrow">→</div>
+              <div class="path-step">Chapitres à partir des marqueurs ✓</div><div class="path-arrow">→</div>
+              <div class="path-step">AAC · 320 Kb/s</div><div class="path-arrow">→</div>
+              <div class="path-step">Ajouter à la file de rendu</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIKTOK -->
+      <div class="pplatform" id="plat-tiktok">
+        <div class="card">
+          <div class="card-t">♪ TikTok <span style="font-size:12px;color:var(--muted);font-weight:400">— Formats A · E</span></div>
+          <table class="spec-table">
+            <tr><th>Paramètre</th><th>Valeur</th><th>DaVinci Resolve 20 (FR)</th></tr>
+            <tr><td>Résolution</td><td><span class="val-orange">1080 × 1920</span> · 9:16</td><td><div class="param-note">Timeline 1080×1920 · 9:16</div></td></tr>
+            <tr><td>Codec vidéo</td><td><span class="val-w">H.264</span><br><div class="param-note">Compatibilité maximale TikTok</div></td><td><div class="param-note">Format : QuickTime · Codec : H.264</div></td></tr>
+            <tr><td>Bitrate</td><td><span class="val-orange">12 000 Kb/s</span><br><div class="param-note">TikTok recompresse toujours — inutile de dépasser</div></td><td><div class="param-note">Rate Control : Débit binaire variable · 12 000 Kb/s</div></td></tr>
+            <tr><td>Audio</td><td><span class="val-w">AAC · 48 kHz · 320 Kb/s</span><br><div class="param-note">Cible : <span class="val-orange">-14 LUFS</span> dans Fairlight</div></td><td><div class="param-note">Fairlight → vérifier niveau global avant export</div></td></tr>
+            <tr><td>Sous-titres</td><td><span class="val-orange">OBLIGATOIRES</span><br><div class="param-note">85% des vues sans son · Inter SemiBold blanc · min 40px</div></td><td><div class="param-note">Paramètres de sous-titrage ou burn-in Fusion/Text+</div></td></tr>
+            <tr><td>Zone safe</td><td><span class="val-orange">Zone centrale</span><br><div class="param-note">150px bas · 50px haut · 80px droite (icônes)</div></td><td><div class="param-note">Custom safe zone : L5% · R15% · T5% · B20%</div></td></tr>
+          </table>
+          <div class="path-box">
+            <div class="path-title">⚙ Chemin DaVinci 20</div>
+            <div class="path-steps">
+              <div class="path-step">Livrer</div><div class="path-arrow">→</div>
+              <div class="path-step">QuickTime · H.264</div><div class="path-arrow">→</div>
+              <div class="path-step">12 000 Kb/s</div><div class="path-arrow">→</div>
+              <div class="path-step">Preset : Équilibrer</div><div class="path-arrow">→</div>
+              <div class="path-step">AAC · 320 Kb/s</div><div class="path-arrow">→</div>
+              <div class="path-step">Fairlight -14 LUFS ✓</div><div class="path-arrow">→</div>
+              <div class="path-step">Ajouter à la file de rendu</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:12px 14px;background:rgba(251,93,4,0.06);border:1px solid rgba(251,93,4,0.2);border-radius:8px;font-size:12px">
+            💡 <b>Un seul export → 3 plateformes :</b> Le fichier 1080×1920 H.264 va directement sur TikTok, Instagram Reels ET Facebook Reels. <span style="color:var(--red);font-weight:600">Ne jamais uploader un fichier téléchargé depuis TikTok sur Facebook</span> — le watermark pénalise l'algorithme.
+          </div>
+        </div>
+      </div>
+
+      <!-- FACEBOOK -->
+      <div class="pplatform" id="plat-facebook">
+        <div class="card">
+          <div class="card-t">f Facebook Reels <span style="font-size:12px;color:var(--muted);font-weight:400">— Repurpose TikTok/IG</span></div>
+          <table class="spec-table">
+            <tr><th>Paramètre</th><th>Valeur</th><th>Note</th></tr>
+            <tr><td>Résolution</td><td><span class="val-orange">1080 × 1920</span></td><td><div class="param-note">Même fichier que TikTok · Zéro re-export</div></td></tr>
+            <tr><td>Codec</td><td><span class="val-w">H.264</span></td><td></td></tr>
+            <tr><td>Bitrate</td><td><span class="val-orange">10 000–15 000 Kb/s</span></td><td></td></tr>
+            <tr><td>Durée max</td><td><span class="val-w">90 secondes</span></td><td><div class="param-note">Optimal MTT : 30–60s</div></td></tr>
+            <tr><td>⚠ Watermark</td><td><span class="val-orange" style="color:var(--red)">À SUPPRIMER</span></td><td><div class="param-note">Toujours exporter depuis DaVinci, jamais depuis l'app TikTok</div></td></tr>
+          </table>
+          <div style="margin-top:14px;padding:12px;background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);border-radius:8px;font-size:12px">
+            ✅ <b>Workflow optimal :</b> 1 export DaVinci → upload TikTok → upload IG Reels → upload Facebook Reels → adapter texte/CTA par plateforme.
+          </div>
+        </div>
+      </div>
+
+      <!-- QUICK REF -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-t">⚡ Récapitulatif rapide — Tous formats MTT</div>
+        <table>
+          <tr><th>Format</th><th>Résolution</th><th>Ratio</th><th>Codec</th><th>FPS</th><th>Bitrate</th><th>Plateformes</th></tr>
+          <tr><td><b>A</b> Conseil Rapide</td><td>1080×1920</td><td><span class="ratio-tag ratio-v">9:16</span></td><td>H.264</td><td>30</td><td><span class="val-orange">12 000</span></td><td>YT · TT · IG · FB</td></tr>
+          <tr><td><b>B</b> Question Parent</td><td>1080×1920</td><td><span class="ratio-tag ratio-v">9:16</span></td><td>H.264</td><td>30</td><td><span class="val-orange">12 000</span></td><td>YT · TT · IG · FB</td></tr>
+          <tr><td><b>C</b> Témoignage</td><td>1080×1920 ou 1920×1080</td><td><span class="ratio-tag ratio-v">9:16</span>/<span class="ratio-tag ratio-h">16:9</span></td><td>H.264</td><td>30</td><td><span class="val-blue">15 000</span></td><td>Toutes</td></tr>
+          <tr><td><b>D</b> Tutoriel Long</td><td>1920×1080 ou 3840×2160</td><td><span class="ratio-tag ratio-h">16:9</span></td><td>H.264/H.265</td><td>30</td><td><span class="val-blue">20 000+</span></td><td>YouTube</td></tr>
+          <tr><td><b>E</b> BTS</td><td>1080×1920</td><td><span class="ratio-tag ratio-v">9:16</span></td><td>H.264</td><td>30</td><td><span class="val-orange">10 000</span></td><td>TT · IG · YT</td></tr>
+          <tr><td><b>Formation</b></td><td>1920×1080</td><td><span class="ratio-tag ratio-h">16:9</span></td><td>H.264</td><td>30</td><td><span class="val-blue">10 000</span></td><td>LearnWorlds · Vimeo</td></tr>
+        </table>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">Bitrate en Kb/s · Préréglage à sauvegarder dans DaVinci : ··· → "Enregistrer comme nouveau préréglage..."</div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         BRANDING
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-branding">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-t">🎨 Palette couleurs MTT</div>
+          <div class="color-sw"><div class="sw" style="background:#2563EB"></div><div><b>#2563EB — Bleu MTT</b><br><span style="font-size:12px;color:var(--muted)">Titres, CTA, overlays texte, lower thirds</span></div></div>
+          <div class="color-sw"><div class="sw" style="background:#F97316"></div><div><b>#F97316 — Orange MTT</b><br><span style="font-size:12px;color:var(--muted)">Accents, alertes positives, badges, highlights</span></div></div>
+          <div class="color-sw"><div class="sw" style="background:#16A34A"></div><div><b>#16A34A — Vert MTT</b><br><span style="font-size:12px;color:var(--muted)">Succès, confirmations, progression élève</span></div></div>
+          <div class="color-sw"><div class="sw" style="background:#DC2626"></div><div><b>#DC2626 — Rouge</b><br><span style="font-size:12px;color:var(--muted)">Alertes, urgences, erreurs</span></div></div>
+        </div>
+        <div class="card">
+          <div class="card-t">🔤 Typographies</div>
+          <div style="padding:14px;background:var(--surface);border-radius:8px;margin-bottom:10px">
+            <div style="font-size:16px;font-weight:600;margin-bottom:4px">Inter — Police principale</div>
+            <div style="font-size:12px;color:var(--muted)">Sous-titres vidéo · Overlays texte · Lower thirds</div>
+          </div>
+          <div style="padding:14px;background:var(--surface);border-radius:8px;margin-bottom:14px">
+            <div style="font-size:16px;font-weight:700;margin-bottom:4px">Poppins — Titres marketing</div>
+            <div style="font-size:12px;color:var(--muted)">Thumbnails · Headings · Visuels promo</div>
+          </div>
+          <div style="font-size:13px"><b>Ton MTT :</b><div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
+            <span class="tag-blue tag">Chaleureux</span><span class="tag-blue tag">Expert</span><span class="tag-green tag">Accessible</span><span class="tag-green tag">Encourageant</span><span class="tag">Direct</span>
+          </div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">🎬 Assets motion — Statut</div>
+        <table>
+          <tr><th>Asset</th><th>Format DaVinci</th><th>Statut</th><th>Action</th></tr>
+          <tr><td><b>Intro animée</b> 3–5s</td><td>.mp4</td><td><span class="tag-green tag">✅ Disponible</span></td><td>Drive → Identité visuelle MTT 3.0</td></tr>
+          <tr><td><b>Outro animée</b> 5–10s</td><td>.mp4</td><td><span class="tag-green tag">✅ Disponible</span></td><td>Drive → Identité visuelle MTT 3.0</td></tr>
+          <tr><td><b>Lower third</b></td><td>.setting (Fusion macro)</td><td><span class="tag-red tag">❌ À créer</span></td><td>Fond #2563EB · Inter SemiBold blanc · Poaty le crée</td></tr>
+          <tr><td><b>Logo overlay</b></td><td>PNG transparent 4K</td><td><span class="tag" style="background:rgba(245,158,11,0.15);color:var(--yellow)">⏳ À confirmer</span></td><td>Vérifier accès Canva Brand Kit</td></tr>
+        </table>
+        <div style="margin-top:12px;padding:12px;background:rgba(245,158,11,0.07);border:1px solid rgba(245,158,11,0.2);border-radius:8px;font-size:12px">
+          ⚠ L'intro/outro MTT 3.0 est disponible mais qualité insuffisante selon Gervais. À refaire dans DaVinci après validation identité visuelle MTT 4.0 (Scénario A vs B encore non tranché).
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         COMPÉTENCES
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-competences">
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;color:var(--muted2);line-height:1.6">12 compétences = 60 idées vidéo (5 par compétence, une par format A–E). Clique sur une compétence pour voir les idées et hooks.</div>
+      </div>
+      <div class="filters" id="comp-filters">
+        <button class="filter-btn active" onclick="filterComp('all',this)">Toutes (12)</button>
+        <button class="filter-btn" onclick="filterComp('devoirs',this)">Devoirs 30%</button>
+        <button class="filter-btn" onclick="filterComp('concentration',this)">Concentration 25%</button>
+        <button class="filter-btn" onclick="filterComp('motivation',this)">Motivation 20%</button>
+        <button class="filter-btn" onclick="filterComp('organisation',this)">Organisation 15%</button>
+        <button class="filter-btn" onclick="filterComp('relation',this)">Relation 10%</button>
+      </div>
+      <div class="comp-grid" id="comp-grid"></div>
+      <div class="comp-detail" id="comp-detail"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         LEARNWORLDS & GOLPO
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-learnworlds">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-t">🎓 Golpo IA — Ce que c'est</div>
+          <div style="font-size:13px;line-height:1.7;color:var(--muted2);margin-bottom:14px">Plateforme de génération automatique de vidéos explicatives (whiteboard animé) à partir de documents, PDFs ou prompts texte. Fondée par des frères Stanford · Y Combinator. Durée 15s–30min. Customisation frame-by-frame.</div>
+          <div class="golpo-ok"><b style="color:var(--green)">✅ Disponible tous plans</b><br><div style="font-size:12px;margin-top:4px;color:var(--muted2)">Génération vidéo de base · 50+ langues · Modes Sketch/Canvas · Voix automatique</div></div>
+          <div class="golpo-warning"><b style="color:var(--red)">❌ Plans payants requis</b><br><div style="font-size:12px;margin-top:4px;color:var(--muted2)">Narration personnalisée · Script Mode · Instructions voix custom · Couleurs branding · Upload image/vidéo personnalisée</div></div>
+        </div>
+        <div class="card">
+          <div class="card-t">⚙ Workflow prévu — Statut</div>
+          <table>
+            <tr><th>#</th><th>Étape</th><th>Statut</th></tr>
+            <tr><td>1</td><td>Contenu source (DOC-053 compétences)</td><td><span class="tag-green tag">✅ Disponible</span></td></tr>
+            <tr><td>2</td><td>Qui prépare les scripts Golpo ?</td><td><span class="tag-red tag">⏳ Non défini</span></td></tr>
+            <tr><td>3</td><td>Quel plan Golpo ? (budget)</td><td><span class="tag-red tag">⏳ Non défini</span></td></tr>
+            <tr><td>4</td><td>Génération Golpo → vidéo whiteboard</td><td><span class="tag" style="background:rgba(245,158,11,0.15);color:var(--yellow)">À tester</span></td></tr>
+            <tr><td>5</td><td>Post-prod DaVinci ou upload direct ?</td><td><span class="tag-red tag">⏳ Non défini</span></td></tr>
+            <tr><td>6</td><td>Upload LearnWorlds</td><td><span class="tag-green tag">Ton rôle ✓</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">📚 12 Compétences → Modules LearnWorlds potentiels</div>
+        <div style="font-size:13px;color:var(--muted2);margin-bottom:12px">Chaque sous-compétence peut devenir une leçon vidéo Golpo. C01 Gestion des Devoirs → 5 leçons. 12 compétences × 5 sous-compétences = 60 modules potentiels.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="tag-orange tag">C01 Devoirs</span><span class="tag-blue tag">C02 Organisation</span><span class="tag-blue tag">C03 Temps</span><span class="tag-purple tag">C04 Concentration</span>
+          <span class="tag-green tag">C05 Motivation</span><span class="tag-green tag">C06 Mindset</span><span class="tag-red tag">C07 Émotions</span><span class="tag-purple tag">C08 Stress</span>
+          <span class="tag-blue tag">C09 Autonomie</span><span class="tag-red tag">C10 Communication</span><span class="tag-red tag">C11 Relations</span><span class="tag-purple tag">C12 Écrans</span>
+        </div>
+      </div>
+      <div class="golpo-pending">
+        <b style="color:var(--yellow)">⏳ 5 décisions en attente — Gervais</b>
+        <ol style="margin-top:8px;padding-left:20px;font-size:12px;line-height:2;color:var(--muted2)">
+          <li>Qui prépare les scripts/prompts Golpo ?</li>
+          <li>Quel plan Golpo — budget Growth/Business prévu ?</li>
+          <li>Vidéos Golpo → DaVinci avant LearnWorlds ou upload direct ?</li>
+          <li>DOC-053 = base des modules LearnWorlds ou autre curriculum existe ?</li>
+          <li>Style whiteboard Golpo cohérent avec identité visuelle MTT validée ?</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         CLICKUP
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-clickup">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-t">📊 Structure ClickUp MTT</div>
+          <table>
+            <tr><th>Espace</th><th>Contenu</th></tr>
+            <tr><td><b>Contenus Vidéo</b></td><td>Pipeline production (statuts A→E)</td></tr>
+            <tr><td><b>Fiches Pédas</b></td><td>Fiches à Créer · En Cours · Bibliothèque · Validées</td></tr>
+            <tr><td><b>Guide Compétences</b></td><td>Fiches Pédas · Lead Magnets</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <div class="card-t">📁 Structure Google Drive</div>
+          <table>
+            <tr><th>Dossier</th><th>Usage</th></tr>
+            <tr><td><b>_INBOX</b></td><td>Rushs reçus → trigger N8N</td></tr>
+            <tr><td><b>PACK-01 à 12</b></td><td>Vidéos classées par pack</td></tr>
+            <tr><td><b>_ARCHIVES</b></td><td>Vidéos publiées archivées</td></tr>
+            <tr><td><b>Assets & Ressources</b></td><td>B-Roll · Musique · Templates</td></tr>
+            <tr><td><b>DaVinci_Templates</b> ⏳</td><td>Macros Fusion .setting · Projets .drp</td></tr>
+            <tr><td><b>Exports_Specs</b> ⏳</td><td>Tableau specs export validé</td></tr>
+          </table>
+          <div style="margin-top:10px;font-size:11px;color:var(--muted)">⏳ = sous-dossiers à créer</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">📝 Brief minimum par format</div>
+        <table>
+          <tr><th>Format</th><th>Brief minimum requis</th></tr>
+          <tr><td><b style="color:var(--orange)">A · E</b></td><td>Hook proposé · Message clé · CTA</td></tr>
+          <tr><td><b style="color:var(--blue)">B · C · D</b></td><td>Hook · Message clé · Structure · CTA · Musique · B-Roll nécessaire</td></tr>
+        </table>
+        <div style="margin-top:10px;padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;font-size:12px">
+          Sans ces champs remplis dans ClickUp → statut « En attente brief » → passe à la vidéo suivante.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         ÉQUIPE
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-equipe">
+      <div class="grid-3">
+        <div class="team-card">
+          <div class="team-av" style="background:rgba(251,93,4,0.15);color:var(--orange)">G</div>
+          <div class="team-name">Gervais Kamga</div>
+          <div class="team-role">CEO · Move to Top</div>
+          <div class="team-contact">WhatsApp · ClickUp<br>Tourne les rushs · Feu vert publication · Décisions stratégiques</div>
+        </div>
+        <div class="team-card">
+          <div class="team-av" style="background:rgba(4,169,218,0.15);color:var(--blue)">P</div>
+          <div class="team-name">Nzambi Poaty</div>
+          <div class="team-role">Expert Production Vidéo</div>
+          <div class="team-contact">DaVinci Resolve · ClickUp<br>Montage · Assets · LearnWorlds · Golpo · B-Roll</div>
+        </div>
+        <div class="team-card">
+          <div class="team-av" style="background:rgba(139,92,246,0.15);color:var(--purple)">J</div>
+          <div class="team-name">Joël</div>
+          <div class="team-role">Scripts & Publication</div>
+          <div class="team-contact">WhatsApp groupe · ClickUp<br>Rédaction scripts · Révision vidéos (24h) · Publication</div>
+        </div>
+        <div class="team-card">
+          <div class="team-av" style="background:rgba(16,185,129,0.15);color:var(--green)">G</div>
+          <div class="team-name">Guy</div>
+          <div class="team-role">CTO · Systèmes</div>
+          <div class="team-contact">ClickUp · N8N<br>ClickUp config · N8N · Supabase · Intégrations tech</div>
+        </div>
+        <div class="team-card">
+          <div class="team-av" style="background:rgba(245,158,11,0.15);color:var(--yellow)">É</div>
+          <div class="team-name">Émilie</div>
+          <div class="team-role">Supervision Coaching</div>
+          <div class="team-contact">ClickUp<br>Suivi pédagogique · Compétences élèves · DOC-053</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-t">📅 Réunions</div>
+        <table>
+          <tr><th>Réunion</th><th>Quand</th><th>Qui</th><th>Durée</th></tr>
+          <tr><td>Planning hebdo</td><td>Lundi</td><td>Gervais + Poaty + Joël</td><td>30 min</td></tr>
+          <tr><td>Sync rapide</td><td>Mercredi</td><td>Gervais + Poaty</td><td>15 min</td></tr>
+          <tr><td>Review performance</td><td>1× / mois</td><td>Gervais + Poaty + Joël</td><td>45 min</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         PLAN D'ACTION
+    ══════════════════════════════════════ -->
+    <div class="panel" id="panel-plan">
+      <div class="card" style="background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.2);margin-bottom:12px">
+        <div class="card-t" style="color:var(--red)">🔴 URGENT — Cette semaine</div>
+        <table>
+          <tr><th>Réf</th><th>Action</th><th>Qui</th><th>Quand</th></tr>
+          <tr><td><b>U1</b></td><td>Récupérer intro/outro MTT 3.0 dans Drive → importer DaVinci</td><td>Poaty</td><td>Cette semaine</td></tr>
+          <tr><td><b>U2</b></td><td>Finaliser tableau specs export → soumettre Gervais</td><td>Poaty → Gervais</td><td>Cette semaine</td></tr>
+          <tr><td><b>U3</b></td><td>Enregistrer palette #2563EB / #F97316 / #16A34A dans DaVinci</td><td>Poaty</td><td><span style="color:var(--red)">Aujourd'hui</span></td></tr>
+          <tr><td><b>U4</b></td><td>Créer lower third macro Fusion (.setting) DaVinci</td><td>Poaty</td><td>2 sem. post-identité</td></tr>
+          <tr><td><b>U5</b></td><td>Imprimer checklist qualité 3 blocs → afficher au poste</td><td>Poaty</td><td><span style="color:var(--red)">Aujourd'hui</span></td></tr>
+        </table>
+      </div>
+      <div class="card" style="background:rgba(251,93,4,0.05);border-color:rgba(251,93,4,0.2);margin-bottom:12px">
+        <div class="card-t" style="color:var(--orange)">🟠 COURT TERME — 2 semaines</div>
+        <table>
+          <tr><th>Réf</th><th>Action</th><th>Qui</th></tr>
+          <tr><td><b>CT1</b></td><td>Formaliser règle brief obligatoire ClickUp (définition + champs)</td><td>Poaty → Gervais</td></tr>
+          <tr><td><b>CT2</b></td><td>Préparer sélection musicale 10–15 pistes classées (4 catégories émotions)</td><td>Poaty → Gervais</td></tr>
+          <tr><td><b>CT3</b></td><td>Créer structure dossiers Drive B-Roll (01–06)</td><td>Poaty</td></tr>
+          <tr><td><b>CT4</b></td><td>Clarifier accès Canva Brand Kit — Poaty ou Joël ?</td><td>Poaty → Gervais</td></tr>
+          <tr><td><b>CT5</b></td><td>Formaliser délais pipeline → validation Gervais</td><td>Poaty → Gervais</td></tr>
+          <tr><td><b>CT6</b></td><td>Localiser rushs anciens Drive → tester pipeline avec 2–3 vidéos</td><td>Poaty</td></tr>
+        </table>
+      </div>
+      <div class="card" style="background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.2)">
+        <div class="card-t" style="color:var(--yellow)">🟡 MOYEN TERME — Dans le mois</div>
+        <table>
+          <tr><th>Réf</th><th>Action</th><th>Condition</th></tr>
+          <tr><td><b>MT1</b></td><td>Pack assets DaVinci complet (logo overlay, lower thirds, transitions, intro/outro 4.0)</td><td>Post-validation identité</td></tr>
+          <tr><td><b>MT2</b></td><td>Test pilote Golpo → LearnWorlds (C01 Gestion des Devoirs)</td><td>Décision plan Golpo</td></tr>
+          <tr><td><b>MT3</b></td><td>Shot list B-Roll 50–80 clips → Gervais filme lors de ses réunions</td><td>Aucune</td></tr>
+          <tr><td><b>MT4</b></td><td>Créer sous-dossiers Drive : DaVinci_Templates + Exports_Specs</td><td>Aucune</td></tr>
+          <tr><td><b>MT5</b></td><td>Mettre à jour ce dashboard avec infos validées</td><td>Post-décisions Gervais</td></tr>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+// ── NAV ──
+const titles = {dashboard:"Vue d'ensemble",formats:"Formats Vidéo A–E",pipeline:"Pipeline Montage",checklist:"Checklists Qualité",specs:"Specs Export — DaVinci 20",branding:"Branding & Design",competences:"12 Compétences × Vidéo",learnworlds:"LearnWorlds & Golpo IA",clickup:"Structure ClickUp & Drive",equipe:"Équipe & Contacts",plan:"Plan d'Action"};
+function nav(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active','active-blue'));
+  document.getElementById('panel-'+id).classList.add('active');
+  btn.classList.add(id==='specs'||id==='learnworlds'?'active-blue':'active');
+  document.getElementById('topbar-title').textContent=titles[id]||id;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('scrim').style.display='none';
+  window.scrollTo(0,0);
+}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('scrim').style.display='none';}
+
+// ── PLATFORM TABS ──
+function showPlat(id,btn){
+  document.querySelectorAll('.pplatform').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active','active-b'));
+  document.getElementById('plat-'+id).classList.add('active');
+  const isBlue=id==='yt-long';
+  btn.classList.add(isBlue?'active-b':'active');
+}
+
+// ── CHECKLIST ──
+function tc(el){el.classList.toggle('checked')}
+const qualityItems=["<b>Hook</b> — 3 premières secondes accrochent","<b>Message</b> — Un seul, clair et mémorable","<b>Durée</b> — Dans la fourchette du format","<b>CTA</b> — Appel à l'action en fin de vidéo","<b>Sous-titres</b> — Propres, sans fautes, animés","<b>Audio</b> — Voix claire, musique cohérente avec le ton MTT","<b>Couleurs MTT</b> — #2563EB / #F97316 respectées","<b>Logo</b> — Présent et bien placé","<b>Format technique</b> — 9:16 ou 16:9 selon format","<b>Nommage</b> — Convention MTT respectée","<b>Zone safe</b> — Texte dans les 80% centraux","<b>2 rounds max</b> — Feedback au format [TIMESTAMP]: [action]"];
+const pubItems=["<b>Titre optimisé</b> — Adapté à la plateforme","<b>Description</b> — Mots-clés et CTA","<b>Hashtags</b> — 5–10 pertinents","<b>Thumbnail</b> — Visage + texte visible","<b>Horaire</b> — Créneau optimal respecté"];
+document.getElementById('cl-quality').innerHTML=qualityItems.map(i=>`<li><div class="cb" onclick="tc(this)"></div><div>${i}</div></li>`).join('');
+document.getElementById('cl-pub').innerHTML=pubItems.map(i=>`<li><div class="cb" onclick="tc(this)"></div><div>${i}</div></li>`).join('');
+
+// ── PIPELINE FULL ──
+const pipeData=[
+  {n:1,c:"#6366F1",l:"À dérusher",t:"24h",d:"Rushs reçus via Drive. Vérifier qualité, créer tâche ClickUp, vérifier brief complet."},
+  {n:2,c:"#8B5CF6",l:"En analyse",t:"24h",d:"Visionnage rushs, sélection prises, plan de montage, marqueurs timeline."},
+  {n:3,c:"#04A9DA",l:"Montage en cours",t:"48–72h",d:"Assemblage DaVinci, rythme, coupes, B-Roll, structure selon format."},
+  {n:4,c:"#0EA5E9",l:"Audio/Visuel",t:"24h",d:"Musique (-14 LUFS), SFX, sous-titres, étalonnage, branding (couleurs, lower third)."},
+  {n:5,c:"#FB5D04",l:"En révision",t:"24h (Joël)",d:"Export livraison, attente feedback Joël puis Gervais. Format: [0:23]: action."},
+  {n:6,c:"#F59E0B",l:"Corrections",t:"24h · 2 max",d:"Appliquer corrections avec timecodes. Maximum 2 rounds de révision."},
+  {n:7,c:"#10B981",l:"Prêt publication",t:"—",d:"Export final selon specs plateforme. Upload Drive _INBOX pour N8N."},
+  {n:8,c:"#059669",l:"Publié ✓",t:"—",d:"Archivage, catalogage, upload Vimeo, mise à jour ClickUp, MAJ KPIs."}
+];
+document.getElementById('pipeline-full').innerHTML=pipeData.map((s,i)=>`
+  <div class="pipe-step" onclick="togglePipe(${i})" id="ps-${i}">
+    <div class="pipe-num" style="background:${s.c}">${s.n}</div>
+    <span class="pipe-label">${s.l}</span>
+    <span class="pipe-time">${s.t}</span>
+  </div>
+  <div class="pipe-detail" id="pd-${i}">${s.d}</div>
+`).join('');
+function togglePipe(i){
+  const ps=document.getElementById('ps-'+i);
+  const pd=document.getElementById('pd-'+i);
+  const open=ps.classList.toggle('open');
+  pd.classList.toggle('open',open);
+}
+
+// ── FORMATS ──
+const fmtData={
+  A:{name:"Conseil Rapide",dur:"30–60s",ratio:"9:16",obj:"Viralité, portée, alimentation quotidienne des réseaux",montage:"~2h",total:"~4h",plateformes:"YT Shorts · TikTok · IG · FB",
+    segs:[{t:"0–3s",l:"Hook",c:"#FB5D04"},{t:"3–8s",l:"Problème",c:"#EF4444"},{t:"8–45s",l:"Solution",c:"#04A9DA"},{t:"45–60s",l:"CTA",c:"#10B981"}],
+    specs:"Face caméra Gervais · Texte hook visible dès 0s · Sous-titres animés obligatoires",
+    ex:"« 3 mots pour démarrer les devoirs sans crise » · « L'erreur #1 des parents »"},
+  B:{name:"Question Parent",dur:"60–90s",ratio:"9:16",obj:"SEO, autorité, engagement commentaires",montage:"~2.5h",total:"~5h",plateformes:"YT Shorts · TikTok · IG · FB · YT Long",
+    segs:[{t:"0–5s",l:"Question",c:"#EF4444"},{t:"5–15s",l:"Validation",c:"#FB5D04"},{t:"15–60s",l:"Réponse",c:"#04A9DA"},{t:"60–75s",l:"Exemple",c:"#10B981"},{t:"75–90s",l:"CTA",c:"#8B5CF6"}],
+    specs:"Question visible tout au long (bandeau) · Face caméra Gervais · Source: commentaires vidéos",
+    ex:"« Mon enfant refuse ses devoirs? » · « À quel âge donner un téléphone? »"},
+  C:{name:"Témoignage / Transformation",dur:"60–120s",ratio:"9:16 ou 16:9",obj:"Conversion, preuve sociale, confiance",montage:"~3h",total:"~6h",plateformes:"Toutes plateformes",
+    segs:[{t:"0–5s",l:"Situation initiale",c:"#EF4444"},{t:"5–20s",l:"Problème vécu",c:"#FB5D04"},{t:"20–90s",l:"Transformation",c:"#04A9DA"},{t:"90–120s",l:"Résultat + CTA",c:"#10B981"}],
+    specs:"Interview parent · Avant/Après si possible · Radar chart comme preuve visuelle",
+    ex:"« De crises chaque soir à routine zen en 6 semaines »"},
+  D:{name:"Tutoriel Complet",dur:"10–20 min",ratio:"16:9",obj:"SEO YouTube, autorité, lead gen",montage:"8–12h",total:"15–20h",plateformes:"YouTube · LearnWorlds",
+    segs:[{t:"0–30s",l:"Hook+promesse",c:"#EF4444"},{t:"30s–2min",l:"Intro",c:"#FB5D04"},{t:"2–15min",l:"Contenu chapitré",c:"#04A9DA"},{t:"15–18min",l:"Récap",c:"#10B981"},{t:"18–20min",l:"CTA",c:"#8B5CF6"}],
+    specs:"Chapitres YouTube OBLIGATOIRES · Markers DaVinci → 'Chapitres à partir des marqueurs' · Thumbnail visage + texte",
+    ex:"« Routine devoirs efficace (guide complet) » · « 5 piliers organisation scolaire »"},
+  E:{name:"Behind The Scenes",dur:"15–45s",ratio:"9:16",obj:"Humanisation, connexion, authenticité",montage:"~30min",total:"~1h",plateformes:"TikTok · IG · YT Shorts",
+    segs:[{t:"0–3s",l:"Moment",c:"#FB5D04"},{t:"3–30s",l:"Action",c:"#04A9DA"},{t:"30–45s",l:"Contexte",c:"#10B981"}],
+    specs:"MINIMAL EDITING · Texte contextuel si nécessaire · Authenticité prime sur production",
+    ex:"Préparation coaching · Réaction succès élève · Coulisses tournage"}
+};
+function showFmt(id,el){
+  document.querySelectorAll('.fmt-card').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const f=fmtData[id];
+  const detail=document.getElementById('fmt-detail');
+  detail.classList.add('active');
+  detail.innerHTML=`
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="font-family:'Syne',sans-serif;font-size:32px;font-weight:800;color:var(--orange)">Format ${id}</div>
+      <div><div style="font-size:16px;font-weight:700">${f.name}</div><div style="font-size:12px;color:var(--muted)">${f.dur} · ${f.ratio} · ${f.plateformes}</div></div>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <span class="tag-orange tag">Montage ${f.montage}</span>
+        <span class="tag-blue tag">Total ${f.total}</span>
+      </div>
+    </div>
+    <div class="timeline-bar">${f.segs.map(s=>`<div class="tl-seg" style="background:${s.c}">${s.t}<br>${s.l}</div>`).join('')}</div>
+    <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;flex-wrap:wrap">
+      <div style="padding:12px;background:var(--surface);border-radius:8px;font-size:12px;line-height:1.6"><b>Spécificités montage :</b><br>${f.specs}</div>
+      <div style="padding:12px;background:var(--surface);border-radius:8px;font-size:12px;line-height:1.6"><b>Exemples titres :</b><br>${f.ex}</div>
+    </div>`;
+}
+
+// ── COMPÉTENCES ──
+const C=[
+  {code:"C01",name:"Gestion des Devoirs",pack:"PACK 1",pillar:"devoirs",color:"#2563EB",pct:"30%",subs:["Initiation devoirs","Maintien effort","Qualité travail","Gestion travaux longs","Autonomie devoirs"],pain:"Conflits quotidiens, crises aux devoirs, parent épuisé",videos:[{t:"3 mots magiques pour démarrer les devoirs sans crise",f:"A",hook:"Votre enfant refuse les devoirs? Dites-lui ces 3 mots."},{t:"Mon enfant met 3h pour 30 min de devoirs — que faire?",f:"B",hook:"« Il met 3 heures pour faire ses devoirs. » Ça vous parle?"},{t:"De crises chaque soir à routine zen en 6 semaines",f:"C",hook:"Avant, c'étaient des cris chaque soir. Aujourd'hui..."},{t:"Guide complet : créer une routine devoirs efficace",f:"D",hook:"Je vais vous montrer le système exact que j'utilise avec les familles."},{t:"Coulisses : session coaching devoirs avec un enfant",f:"E",hook:""}]},
+  {code:"C02",name:"Organisation",pack:"PACK 2",pillar:"organisation",color:"#0EA5E9",pct:"15%",subs:["Espace de travail","Sac d'école","Rangement chambre","Retrouver ses affaires","Systèmes d'organisation"],pain:"Affaires perdues, oublis constants, chambre en chaos",videos:[{t:"L'astuce du sac d'école pour 0 oubli",f:"A",hook:"Votre enfant oublie son matériel TOUS les jours? Essayez ça."},{t:"Mon enfant perd tout — est-ce normal?",f:"B",hook:"« Il perd ses crayons, ses cahiers, ses clés... » Question d'un parent."},{t:"Comment ma fille est passée de chaos total à organisée",f:"C",hook:"Sa chambre? On ne voyait plus le sol. 8 semaines après..."},{t:"5 systèmes d'organisation pour enfants (guide complet)",f:"D",hook:"5 méthodes testées avec des centaines d'enfants. La #3 change tout."},{t:"Comment on organise un espace de travail avec un élève",f:"E",hook:""}]},
+  {code:"C03",name:"Gestion du Temps",pack:"PACK 2",pillar:"organisation",color:"#0EA5E9",pct:"15%",subs:["Conscience du temps","Estimation des durées","Respect des échéances","Planification","Priorisation"],pain:"Toujours en retard, travaux à la dernière minute",videos:[{t:"L'erreur #1 des parents avec la gestion du temps",f:"A",hook:"Vous dites 'dépêche-toi' 50 fois par jour? C'est LE problème."},{t:"Mon enfant fait tout à la dernière minute, comment changer?",f:"B",hook:"« Tout à la dernière minute, même les gros projets. »"},{t:"Il ne savait pas qu'une heure = 60 minutes. Maintenant il planifie seul.",f:"C",hook:"À 10 ans, il pensait que 5 minutes = 30 secondes."},{t:"Apprendre la gestion du temps à son enfant (méthode complète)",f:"D",hook:"Le cerveau d'un enfant ne perçoit PAS le temps comme le vôtre."},{t:"Timer challenge avec un élève — regardez sa réaction",f:"E",hook:""}]},
+  {code:"C04",name:"Concentration & Attention",pack:"PACK 2/10",pillar:"concentration",color:"#8B5CF6",pct:"25%",subs:["Attention soutenue","Résistance distractions","Recentrage","Attention aux détails","Écoute active"],pain:"Se laisse distraire, décroche après 5 minutes, erreurs d'inattention",videos:[{t:"3 techniques pour aider un enfant à se concentrer",f:"A",hook:"Son attention part dans tous les sens? Testez ça CE SOIR."},{t:"TDAH ou simple distraction — comment faire la différence?",f:"B",hook:"« Est-ce qu'il est TDAH ou juste distrait? » LA question."},{t:"De <5 min de concentration à 30 min sans décrocher",f:"C",hook:"Son prof disait 'il ne tient pas en place'. Aujourd'hui..."},{t:"Le guide COMPLET de la concentration enfant",f:"D",hook:"La science dit que l'attention d'un enfant se DÉVELOPPE. Voici comment."},{t:"Session Pomodoro en direct avec un élève",f:"E",hook:""}]},
+  {code:"C05",name:"Motivation & Engagement",pack:"PACK 3",pillar:"motivation",color:"#16A34A",pct:"20%",subs:["Engagement scolaire","Persévérance","Motivation intrinsèque","Initiative","Sens de l'effort"],pain:"'À quoi ça sert l'école?', aucun effort, fait le strict minimum",videos:[{t:"La phrase qui détruit la motivation de votre enfant",f:"A",hook:"90% des parents disent cette phrase. Elle DÉTRUIT la motivation."},{t:"Mon enfant dit 'à quoi ça sert l'école' — que répondre?",f:"B",hook:"« À quoi ça sert? » Votre réponse va tout changer."},{t:"De 'je suis nul' à premier de classe en 4 mois",f:"C",hook:"Il avait 4 de moyenne. Son prof n'y croyait plus. 4 mois après..."},{t:"5 piliers de la motivation scolaire (ce que la science dit)",f:"D",hook:"La motivation ne vient PAS des récompenses. Voici d'où elle vient."},{t:"La réaction de Gervais quand un élève réussit pour la première fois",f:"E",hook:""}]},
+  {code:"C06",name:"Mindset & Confiance",pack:"PACK 3",pillar:"motivation",color:"#16A34A",pct:"20%",subs:["Mindset de croissance","Confiance en soi","Relation à l'erreur","Auto-efficacité","Résilience"],pain:"'Je suis nul', peur de l'erreur, abandonne avant d'essayer",videos:[{t:"Votre enfant dit 'je suis nul'? Voici quoi répondre",f:"A",hook:"NE DITES PAS 'mais non t'es pas nul'. Dites plutôt..."},{t:"Pourquoi mon enfant a peur de se tromper?",f:"B",hook:"Il efface 10 fois, pleure pour une erreur. Pourquoi?"},{t:"Elle avait peur de tout. Aujourd'hui elle ose lever la main.",f:"C",hook:"'Si je me trompe, tout le monde va rire.' C'est ce qu'elle pensait."},{t:"Le mindset de croissance expliqué aux parents",f:"D",hook:"Le concept qui a changé des millions d'enfants."},{t:"Moment où un enfant réalise qu'il PEUT réussir",f:"E",hook:""}]},
+  {code:"C07",name:"Gestion des Émotions",pack:"PACK 5",pillar:"relation",color:"#DC2626",pct:"10%",subs:["Identification émotions","Expression émotions","Régulation émotionnelle","Gestion colère","Tolérance frustration"],pain:"Crises de colère, pleurs incontrôlables, aucune frustration",videos:[{t:"La technique en 3 étapes quand votre enfant 'explose'",f:"A",hook:"Crise de colère en plein devoirs? Faites EXACTEMENT ceci."},{t:"Pourquoi mon enfant ne supporte aucune frustration?",f:"B",hook:"Le moindre obstacle = explosion. Pourquoi et comment y remédier?"},{t:"Avant: crises quotidiennes. Après: il verbalise ses émotions.",f:"C",hook:"Chaque soir c'était l'enfer. 8 semaines après..."},{t:"Comprendre et gérer les émotions de votre enfant",f:"D",hook:"Le cerveau émotionnel d'un enfant n'est PAS mature."},{t:"",f:"E",hook:""}]},
+  {code:"C08",name:"Gestion du Stress",pack:"PACK 4",pillar:"concentration",color:"#8B5CF6",pct:"25%",subs:["Reconnaissance du stress","Techniques de relaxation","Gestion anxiété examens","Pensées rassurantes","Anticipation positive"],pain:"Anxiété avant examens, maux de ventre, pensées catastrophiques",videos:[{t:"2 exercices anti-stress à faire AVANT un examen",f:"A",hook:"Votre enfant a mal au ventre avant un contrôle? 2 exercices de 30 secondes."},{t:"Mon enfant est anxieux à l'école — quand s'inquiéter?",f:"B",hook:"Maux de ventre, pleurs le matin, refus d'aller en classe. Normal?"},{t:"'Je vais tout rater' → 'J'ai confiance'. Le parcours d'un élève.",f:"C",hook:"Chaque examen, c'était la panique. Paralysé."},{t:"Anxiété scolaire chez l'enfant: comprendre et agir",f:"D",hook:"1 enfant sur 5 souffre d'anxiété scolaire."},{t:"",f:"E",hook:""}]},
+  {code:"C09",name:"Autonomie",pack:"PACK 2",pillar:"organisation",color:"#0EA5E9",pct:"15%",subs:["Autonomie quotidienne","Autonomie scolaire","Prise de décision","Demande d'aide","Responsabilisation"],pain:"Parent doit tout faire, aucune initiative",videos:[{t:"L'erreur qui empêche votre enfant de devenir autonome",f:"A",hook:"Vous faites probablement ça par amour. Mais ça le rend DÉPENDANT."},{t:"Mon enfant ne fait rien sans moi — comment couper le cordon?",f:"B",hook:"'Maman, viens m'aider.' Pour TOUT. Toujours."},{t:"De parent-hélicoptère à enfant autonome: notre histoire",f:"C",hook:"Je faisais tout pour lui. Jusqu'au jour où..."},{t:"7 étapes pour développer l'autonomie de votre enfant",f:"D",hook:"L'autonomie ne se décrète pas. Elle se CONSTRUIT."},{t:"",f:"E",hook:""}]},
+  {code:"C10",name:"Communication",pack:"PACK 7",pillar:"relation",color:"#DC2626",pct:"10%",subs:["Expression orale","Écoute","Communication besoins","Communication adultes","Non-verbale"],pain:"Ne parle pas, conflits par malentendu",videos:[{t:"La question magique pour que votre enfant vous parle",f:"A",hook:"'Ça s'est bien passé?' 'Oui.' STOP. Posez CETTE question."},{t:"Pourquoi mon ado ne me raconte plus rien?",f:"B",hook:"Avant il racontait tout. Maintenant? Silence radio."},{t:"",f:"C",hook:""},{t:"Communication parent-enfant: rétablir le dialogue",f:"D",hook:"Ce n'est pas votre enfant qui a un problème. C'est la méthode."},{t:"",f:"E",hook:""}]},
+  {code:"C11",name:"Relations Sociales",pack:"PACK 7",pillar:"relation",color:"#DC2626",pct:"10%",subs:["Initiation sociale","Maintien amitiés","Résolution conflits","Coopération","Empathie"],pain:"Isolé, pas d'amis, conflits avec camarades",videos:[{t:"3 compétences sociales que TOUT enfant devrait maîtriser",f:"A",hook:"L'école ne les enseigne pas. Mais elles déterminent TOUT."},{t:"Mon enfant est toujours seul à la récré — que faire?",f:"B",hook:"'Il mange seul à la cantine.' Les mots d'un parent inquiet."},{t:"De victime de harcèlement à enfant épanoui",f:"C",hook:"Personne ne voulait jouer avec lui. 3 mois de coaching après..."},{t:"Aider son enfant à se faire des amis (guide par âge)",f:"D",hook:"Les compétences sociales s'apprennent. Pas par magie, par PRATIQUE."},{t:"",f:"E",hook:""}]},
+  {code:"C12",name:"Gestion des Écrans",pack:"PACK 2.23",pillar:"concentration",color:"#8B5CF6",pct:"25%",subs:["Conscience utilisation","Respect des limites","Auto-régulation","Transition écrans","Équilibre activités"],pain:"Accro au téléphone, crises quand on enlève",videos:[{t:"La méthode douce pour réduire les écrans (sans crise)",f:"A",hook:"Enlever le téléphone = GUERRE. Voici comment faire autrement."},{t:"À quel âge donner un téléphone à son enfant?",f:"B",hook:"La question que TOUS les parents se posent."},{t:"De 6h d'écran/jour à 1h30 — sans un seul conflit",f:"C",hook:"6 heures. PAR JOUR. Sur TikTok, jeux, YouTube."},{t:"Écrans et enfants: le guide complet pour reprendre le contrôle",f:"D",hook:"Les écrans ne sont pas le problème. C'est COMMENT on les gère."},{t:"",f:"E",hook:""}]}
+];
+const pillarColors={devoirs:"#2563EB",concentration:"#8B5CF6",motivation:"#16A34A",organisation:"#0EA5E9",relation:"#DC2626"};
+const pillarNames={devoirs:"Devoirs & Routines",concentration:"Concentration & Écrans",motivation:"Motivation & Mindset",organisation:"Organisation & Autonomie",relation:"Relation Parent-Enfant"};
+const fmtLabels={A:"Short 30–60s",B:"Question 60–90s",C:"Témoignage",D:"Tutoriel 10–20min",E:"BTS 15–45s"};
+
+function filterComp(p,btn){
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCompGrid(p);
+  document.getElementById('comp-detail').classList.remove('active');
+}
+
+function renderCompGrid(filter){
+  const g=document.getElementById('comp-grid');
+  g.innerHTML='';
+  C.forEach((c,i)=>{
+    if(filter!=='all'&&c.pillar!==filter)return;
+    const pc=pillarColors[c.pillar];
+    g.innerHTML+=`<div class="comp-card" onclick="showComp(${i})" id="cc-${i}">
+      <div class="comp-code" style="color:${pc}">${c.code}</div>
+      <div class="comp-name">${c.name}</div>
+      <div class="comp-pack">${c.pack}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px">
+        <span class="tag" style="font-size:10px">${c.subs.length} sous-comp.</span>
+        <span class="tag" style="font-size:10px;background:${pc}20;color:${pc}">${c.pct}</span>
+      </div>
+      <div class="comp-pillar" style="background:${pc}18;color:${pc}">${pillarNames[c.pillar]}</div>
+    </div>`;
+  });
+}
+
+function showComp(i){
+  document.querySelectorAll('.comp-card').forEach(c=>c.classList.remove('selected'));
+  const el=document.getElementById('cc-'+i);if(el)el.classList.add('selected');
+  const c=C[i],pc=pillarColors[c.pillar];
+  const detail=document.getElementById('comp-detail');
+  detail.classList.add('active');
+  const fmtColorMap={A:"orange",B:"orange",C:"green",D:"purple",E:""};
+  const vids=c.videos.filter(v=>v.t).map(v=>`
+    <div class="idea ${fmtColorMap[v.f]||'blue'}">
+      <div class="idea-title">${v.t}</div>
+      <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap"><span class="tag" style="font-size:10px">Format ${v.f} — ${fmtLabels[v.f]}</span></div>
+      ${v.hook?`<div class="idea-hook">« ${v.hook} »</div>`:''}
+    </div>`).join('');
+  const subs=c.subs.map((s,j)=>`<tr><td style="font-family:'DM Mono',monospace;font-size:11px;color:${pc};font-weight:700">${c.code}.${j+1}</td><td style="font-weight:600">${s}</td></tr>`).join('');
+  detail.innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+      <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:${pc}">${c.code}</div>
+      <div><div style="font-size:18px;font-weight:700">${c.name}</div><div style="font-size:12px;color:var(--muted)">${c.pack} · ${pillarNames[c.pillar]} · ${c.pct} des demandes</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Sous-compétences</div><table>${subs}</table></div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Problème parent</div><div style="font-size:13px;padding:12px;background:var(--surface);border-radius:8px;line-height:1.6">${c.pain}</div></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">5 idées vidéo (Formats A–E)</div>
+    ${vids}`;
+  detail.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+renderCompGrid('all');
+</script>
+</body>
+</html>
